@@ -1,0 +1,48 @@
+services:
+  db-master:
+    image: mysql:8.0
+    container_name: db-master
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_SERVER_ID: 1
+    volumes:
+      - master_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - proyecto-network
+
+  db-slave:
+    image: mysql:8.0
+    container_name: db-slave
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_SERVER_ID: 2
+    depends_on:
+      - db-master
+    volumes:
+      - slave_data:/var/lib/mysql
+    networks:
+      - proyecto-network
+
+  app:
+    build: .
+    container_name: mi-sistema-trailers
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - db-master
+    networks:
+      - proyecto-network
+
+networks:
+  proyecto-network:
+    driver: bridge
+
+volumes:
+  master_data:
+  slave_data:
