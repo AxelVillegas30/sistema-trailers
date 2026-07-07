@@ -1,14 +1,13 @@
-# Usar una imagen de Eclipse Temurin (es el estándar actual de Java)
-FROM eclipse-temurin:17-jre-alpine
-
-# Directorio de trabajo en el contenedor
+# 1. Fase de construcción: Usamos Maven para compilar el proyecto
+FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
+COPY . .
+RUN mvn clean install -DskipTests
 
-# Copiar el archivo .jar
-COPY target/com.sistema.trailers-1.0.jar app.jar
-
-# Exponer el puerto
+# 2. Fase de ejecución: Usamos el archivo .jar generado arriba
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+# Copiamos el .jar desde la fase de construcción (la carpeta target)
+COPY --from=build /app/target/com.sistema.trailers-1.0.jar app.jar
 EXPOSE 8080
-
-# Comando para ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]
